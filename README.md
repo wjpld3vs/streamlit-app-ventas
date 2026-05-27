@@ -1,36 +1,17 @@
 # Clasificador Retail Inteligente - Dashboard Streamlit
 
-Aplicacion web local desarrollada con **Streamlit** que utiliza un modelo de **Machine Learning (Random Forest)** para clasificar operaciones de venta retail como **Mayorista** o **Minorista**.
+Aplicacion web local desarrollada con **Streamlit** que utiliza un modelo de **Machine Learning (Random Forest)** para clasificar operaciones de venta retail como **Mayorista** o **Minorista**. Incluye modulos de prediccion individual, carga batch desde CSV, analisis del modelo y simulacion de escenarios.
 
 ---
 
-## Proposito general del dashboard
+## Novedades de esta version
 
-Esta herramienta permite a equipos comerciales y de operaciones evaluar rapidamente si una transaccion de compra corresponde a un perfil de **cliente Mayorista** o **cliente Minorista**, basandose en tres variables clave: cantidad de producto, precio unitario y porcentaje de descuento aplicado.
-
-### Que problema resuelve
-
-En entornos retail, distinguir entre clientes mayoristas y minoristas puede ser complejo cuando hay zonas grises (compras de volumen medio, descuentos intermedios). Este dashboard automatiza esa clasificacion usando un modelo entrenado, proporcionando:
-
-- Una clasificacion inmediata basada en datos.
-- La probabilidad de pertenencia a cada clase.
-- Una interpretacion en lenguaje de negocio para facilitar la toma de decisiones.
-
----
-
-## Como se conecta Streamlit con el modelo
-
-1. **Carga del modelo**: `app.py` utiliza `joblib` para cargar `modelo_clasificacion_retail.pkl` mediante el decorador `@st.cache_resource`, lo que garantiza que el modelo se cargue una sola vez en memoria.
-2. **Entrada de usuario**: Los controles interactivos de Streamlit en la barra lateral capturan los valores de `cantidad_kg`, `precio_unitario` y `descuento_pct`.
-3. **Construccion del DataFrame**: Se construye un `pd.DataFrame` con los nombres exactos de columna que espera el modelo (`[cantidad_kg, precio_unitario, descuento_pct]`).
-4. **Prediccion**: Se llama a `modelo.predict()` y `modelo.predict_proba()` para obtener la clase y las probabilidades.
-5. **Visualizacion**: Los resultados se muestran en tarjetas de metricas, graficos de barras y mensajes interpretativos.
-
-### Tipo de prediccion
-
-Clasificacion binaria supervisada con dos clases:
-- `0` → **Minorista**
-- `1` → **Mayorista**
+| Modulo | Funcionalidad |
+|--------|---------------|
+| **Prediccion Individual** | Gauge de confianza, waterfall de contribucion por feature, recomendaciones accionables, graficos Plotly interactivos |
+| **Carga por Lote (CSV)** | Procesamiento batch, KPIs de resumen, donut de clases, histograma de probabilidades, analisis temporal, exportacion de resultados |
+| **Analisis del Modelo** | Feature importance, superficie de decision interactiva, matriz de confusion, curva ROC, metricas (accuracy, precision, recall, F1) |
+| **Escenarios What-If** | Sliders en tiempo real, curvas de sensibilidad, comparador A/B |
 
 ---
 
@@ -38,21 +19,16 @@ Clasificacion binaria supervisada con dos clases:
 
 ```
 proyecto-streamlit-pkl/
-├── app.py
-├── modelo_clasificacion_retail.pkl
-├── requirements.txt
+├── app.py                              # Aplicacion principal (4 modulos)
+├── modelo_clasificacion_retail.pkl     # Modelo RandomForest entrenado
+├── requirements.txt                    # Dependencias Python (incluye Plotly)
 ├── README.md
-└── docs/
-    └── streamlit_componentes.md
+├── docs/
+│   └── streamlit_componentes.md        # Guia detallada de componentes
+├── datos_prueba_50.csv                 # Dataset de prueba: 50 transacciones
+├── datos_prueba_200.csv                # Dataset de prueba: 200 transacciones
+└── datos_prueba_500.csv                # Dataset de prueba: 500 transacciones
 ```
-
-| Archivo / Carpeta | Descripcion |
-|---|---|
-| `app.py` | Aplicacion principal de Streamlit con toda la logica de carga, prediccion y visualizacion |
-| `modelo_clasificacion_retail.pkl` | Modelo RandomForest entrenado, cargado en la app via joblib |
-| `requirements.txt` | Dependencias Python necesarias para ejecutar el proyecto |
-| `README.md` | Este archivo de documentacion |
-| `docs/streamlit_componentes.md` | Guia detallada de cada componente de Streamlit utilizado |
 
 ---
 
@@ -97,134 +73,112 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-La aplicacion se abrira automaticamente en su navegador en `http://localhost:8501`.
+La aplicacion se abrira en `http://localhost:8501`.
 
 ---
 
-## Uso de archivos .pkl en el proyecto
+## Como usar las nuevas features
 
-### Como se carga el modelo
+### Modulo 1: Prediccion Individual
 
-```python
-import joblib
+1. En la barra lateral, ajuste los 3 parametros (**Cantidad kg**, **Precio Unitario**, **Descuento %**)
+2. Presione **Clasificar Operacion**
+3. Observe:
+   - **Tarjeta de resultado** coloreada (rojo = Mayorista, azul = Minorista)
+   - **Gauge de confianza** con zonas verde (>90%), amarilla (70-90%), roja (<70%)
+   - **Waterfall de contribucion**: barras rojas = empujan hacia Mayorista, azules = hacia Minorista
+   - **Acciones recomendadas** en el expander inferior, segmentadas por clase y nivel de confianza
+4. Use el boton **Limpiar** para reiniciar
 
-@st.cache_resource
-def cargar_modelo(ruta_modelo: str):
-    return joblib.load(ruta_modelo)
+### Modulo 2: Carga por Lote (CSV)
 
-modelo = cargar_modelo("modelo_clasificacion_retail.pkl")
-```
+1. Seleccione un **dataset de prueba** del dropdown o **suba su propio CSV**
+   - Columnas requeridas: `cantidad_kg`, `precio_unitario`, `descuento_pct`
+   - Columnas opcionales: `fecha` (para analisis temporal), `clase_real` (para metricas)
+2. Los resultados se muestran automaticamente:
+   - **KPI cards**: total transacciones, % Mayorista/Minorista, confianza media, importe total, zona gris
+   - **Donut chart**: distribucion de clases
+   - **Histograma**: distribucion de probabilidades predichas
+   - **Barras apiladas**: confianza por clase
+   - **Serie temporal**: evolucion diaria/semanal/mensual (si el CSV tiene `fecha`)
+3. Use los **filtros** en la sidebar para segmentar por clase o nivel de confianza
+4. Ajuste el **umbral de decision** para ver como cambia la clasificacion
+5. Presione **Descargar resultados** para exportar el CSV con predicciones
 
-Se usa `joblib` en lugar de `pickle` porque esta optimizado para objetos grandes de scikit-learn y maneja mejor la serializacion de arrays NumPy.
+### Modulo 3: Analisis del Modelo
 
-### Donde ubicar el archivo .pkl
+1. Observe el grafico de **Feature Importance** que muestra que variables pesan mas
+2. Explore la **superficie de decision** interactiva:
+   - Mapa de calor que muestra como clasifica el modelo en el espacio cantidad vs precio
+   - Use el slider de **descuento fijo** para ver como cambia la frontera
+   - La linea blanca muestra el umbral de decision configurable
+3. Seleccione un dataset con `clase_real` para ver **metricas de rendimiento**:
+   - Accuracy, Precision, Recall, F1-Score
+   - Matriz de confusion
+   - Curva ROC con AUC
+   - Reporte de clasificacion detallado
 
-El archivo `modelo_clasificacion_retail.pkl` debe estar en la **raiz del proyecto**, en el mismo directorio que `app.py`.
+### Modulo 4: Escenarios What-If
 
-### Precauciones al trabajar con archivos .pkl
+**Modo Sliders en Tiempo Real:**
+- Mueva los sliders y observe como la prediccion se actualiza instantaneamente
+- Sin necesidad de presionar boton
 
-- Solo cargue archivos .pkl de **fuentes confiables** (los archivos pickle pueden ejecutar codigo arbitrario al deserializarse).
-- Verifique que la version de scikit-learn usada para guardar el modelo sea **compatible** con la version instalada en su entorno.
-- No modifique el archivo .pkl manualmente.
-- Si cambia el modelo, asegurese de actualizar las constantes `COLUMNAS_MODELO` y `MAPA_CLASES` en `app.py`.
+**Modo Curva de Sensibilidad:**
+- Seleccione una feature a variar y configure los valores fijos de las otras
+- Observe la curva que muestra como cambia P(Mayorista) al variar la feature
+- Identifique el **punto de cruce** donde el modelo cambia de Minorista a Mayorista
 
-### Como validar que el modelo fue cargado correctamente
-
-Ejecute el siguiente script de verificacion:
-
-```python
-import joblib
-
-modelo = joblib.load("modelo_clasificacion_retail.pkl")
-print("Tipo:", type(modelo).__name__)
-print("Clases:", modelo.classes_)
-print("Features:", modelo.feature_names_in_)
-print("predict_proba:", hasattr(modelo, "predict_proba"))
-```
-
-Salida esperada:
-```
-Tipo: RandomForestClassifier
-Clases: [0 1]
-Features: ['cantidad_kg' 'precio_unitario' 'descuento_pct']
-predict_proba: True
-```
-
----
-
-## Flujo de funcionamiento de la app
-
-1. **El usuario introduce valores** en la barra lateral (cantidad_kg, precio_unitario, descuento_pct).
-2. **Streamlit construye un DataFrame** con las columnas `['cantidad_kg', 'precio_unitario', 'descuento_pct']` respetando el orden exacto de entrenamiento.
-3. **El modelo .pkl genera la prediccion** usando `predict()` y `predict_proba()`.
-4. **La app muestra la clase predicha** (Mayorista o Minorista) en una tarjeta destacada.
-5. **Se muestran las probabilidades** por clase en formato de metricas numericas.
-6. **Se genera una interpretacion** visual (grafico de barras) y textual (mensaje contextual) del resultado.
+**Modo Comparador A/B:**
+- Configure dos escenarios distintos lado a lado
+- Compare clasificaciones, probabilidades e importes
+- Vea las diferencias en tabla resumen y grafico comparativo
 
 ---
 
-## Prueba de funcionamiento
+## Datasets de prueba incluidos
 
-Para verificar que el modelo responde correctamente, pruebe con estos valores:
+Tres archivos CSV pre-generados en la raiz del proyecto:
 
-| Parametro | Valor |
-|---|---|
-| cantidad_kg | 400 |
-| precio_unitario | 10.00 |
-| descuento_pct | 15% |
+| Archivo | Transacciones | Periodo | Mayoristas reales | Minoristas reales |
+|---------|---------------|---------|-------------------|-------------------|
+| `datos_prueba_50.csv` | 50 | ene-feb 2026 | ~16 | ~34 |
+| `datos_prueba_200.csv` | 200 | ene-abr 2026 | ~69 | ~131 |
+| `datos_prueba_500.csv` | 500 | ene-jun 2026 | ~194 | ~306 |
 
-**Resultado esperado:** Clasificacion como **Mayorista** con probabilidad aproximada de **96%**.
-
-Caso contrario (Minorista):
-
-| Parametro | Valor |
-|---|---|
-| cantidad_kg | 10 |
-| precio_unitario | 5.00 |
-| descuento_pct | 0% |
-
-**Resultado esperado:** Clasificacion como **Minorista** con probabilidad aproximada de **94%**.
+Cada CSV incluye la columna `clase_real` con la clasificacion verdadera para evaluar el modelo.
+La columna `fecha` permite analisis de tendencias temporales.
 
 ---
 
-## Documentacion de componentes Streamlit
+## Dependencias
 
-Consulte [`docs/streamlit_componentes.md`](docs/streamlit_componentes.md) para una guia detallada de cada componente de Streamlit utilizado en el dashboard y como adaptarlos.
+```
+streamlit>=1.45.0
+scikit-learn>=1.6.0
+joblib>=1.4.0
+pandas>=2.2.0
+numpy>=2.0.0
+matplotlib>=3.10.0
+plotly>=5.22.0
+```
 
 ---
 
 ## Como extender el proyecto
 
-### Agregar nuevas variables
-
-1. Reentrene el modelo con las nuevas variables.
-2. Actualice la lista `COLUMNAS_MODELO` en `app.py` con los nombres exactos de las columnas.
-3. Agregue nuevos controles de entrada en la barra lateral (`st.number_input`, `st.slider`, etc.).
-4. Actualice `construir_dataframe()` para incluir las nuevas variables en el orden correcto.
-
-### Cambiar el modelo
-
-1. Reemplace `modelo_clasificacion_retail.pkl` por el nuevo archivo .pkl.
-2. Ejecute el script de verificacion para inspeccionar el nuevo modelo.
-3. Actualice `COLUMNAS_MODELO` y `MAPA_CLASES` segun corresponda.
-4. Si el nuevo modelo no soporta `predict_proba`, ajuste la visualizacion de probabilidades.
-
-### Agregar graficos adicionales
-
-Streamlit soporta multiples librerias de visualizacion:
-- `st.bar_chart` (nativo, como en este proyecto)
-- `st.line_chart`, `st.area_chart`, `st.scatter_chart`
-- `st.pyplot` para graficos de matplotlib
-- `st.plotly_chart` para graficos interactivos de Plotly
+- **Agregar nuevas features**: reentrene el modelo, actualice `COLUMNAS_MODELO` y los sliders en cada tab
+- **Cambiar el modelo .pkl**: reemplace el archivo y actualice constantes
+- **Agregar graficos**: use `st.plotly_chart()` con `plotly.graph_objects` o `plotly.express`
+- **Nuevos modulos**: agregue opciones al `st.sidebar.radio` de navegacion y desarrolle la nueva seccion
 
 ---
 
 ## Buenas practicas
 
-- **Separacion de responsabilidades**: La carga del modelo, la preparacion de datos y la visualizacion estan en funciones separadas.
-- **Cacheo con `@st.cache_resource`**: Evita recargar el modelo en cada interaccion del usuario.
-- **Validacion de entradas**: Los controles `st.number_input` y `st.slider` tienen rangos definidos (min/max).
-- **Manejo de errores**: Se capturan excepciones si el archivo .pkl no existe o no puede cargarse.
-- **Seguridad**: Nunca se cargan archivos .pkl subidos por el usuario. El modelo es fijo y conocido.
-- **Nombres de columnas explicitos**: El DataFrame se construye con los nombres exactos requeridos por el modelo.
-- **No requiere scaler.pkl**: Random Forest no necesita escalado de variables.
+- Modelo cacheado con `@st.cache_resource`
+- Validacion de CSV antes de procesar
+- Manejo de errores en carga de modelo y predicciones
+- Graficos interactivos con Plotly (tooltips, zoom, descarga)
+- Estilos condicionales en tablas de resultados
+- Session state para persistencia entre renderizados
