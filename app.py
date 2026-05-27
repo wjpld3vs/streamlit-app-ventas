@@ -1551,11 +1551,11 @@ elif pagina == "Escenarios What-If":
         if feature_var == "cantidad_kg":
             rango_min = st.sidebar.number_input("Min", 1, 500, 1, key="sens_min")
             rango_max = st.sidebar.number_input("Max", 1, 500, 500, key="sens_max")
-            default_otros = {"precio_unitario": 10.0, "descuento_pct": 10}
+            default_otros = {"precio_unitario": 10.0, "descuento_pct": 10.0}
         elif feature_var == "precio_unitario":
             rango_min = st.sidebar.number_input("Min", 0.01, 500.0, 0.5, key="sens_min")
             rango_max = st.sidebar.number_input("Max", 0.01, 500.0, 200.0, key="sens_max")
-            default_otros = {"cantidad_kg": 100.0, "descuento_pct": 10}
+            default_otros = {"cantidad_kg": 100.0, "descuento_pct": 10.0}
         else:
             rango_min = st.sidebar.number_input("Min", 0, 100, 0, key="sens_min")
             rango_max = st.sidebar.number_input("Max", 0, 100, 100, key="sens_max")
@@ -1565,10 +1565,15 @@ elif pagina == "Escenarios What-If":
         valores_fijos = {}
         for fn in COLUMNAS_MODELO:
             if fn != feature_var:
-                valores_fijos[fn] = st.sidebar.number_input(
-                    f"{fn}", 0.01 if fn == "precio_unitario" else 0.0, 500.0, default_otros[fn],
-                    key=f"sens_fijo_{fn}"
-                )
+                if fn == "descuento_pct":
+                    valores_fijos[fn] = st.sidebar.number_input(
+                        f"{fn}", 0, 100, int(default_otros[fn]), key=f"sens_fijo_{fn}"
+                    )
+                else:
+                    valores_fijos[fn] = st.sidebar.number_input(
+                        f"{fn}", 0.01 if fn == "precio_unitario" else 0.0, 500.0, default_otros[fn],
+                        key=f"sens_fijo_{fn}"
+                    )
 
         st.markdown('<p class="section-title">Curva de Sensibilidad</p>', unsafe_allow_html=True)
         st.caption(f"Como cambia la probabilidad de Mayorista al variar **{feature_var}**, manteniendo las demas variables fijas.")
