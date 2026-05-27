@@ -18,6 +18,7 @@ env/
 
 # ML models (serialized binary files)
 *.pkl
+!modelo_clasificacion_retail.pkl
 *.pickle
 *.joblib
 *.h5
